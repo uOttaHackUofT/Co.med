@@ -1,41 +1,149 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Head from 'next/head';
+import './styles.css';
 
-const Quadrant = ({ title, children }) => (
-  <div style={{ border: '1px solid black', padding: '10px' }}>
-    <h2>{title}</h2>
-    {children}
-  </div>
-);
+export default function Doctor() {
+  const [formData, setFormData] = useState(null);
+  const [response, setResponse] = useState(null);
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [chatResponse, setChatResponse] = useState('');
+  const [chatCitationResponse, setChatCitationResponse] = useState('');
 
-const QuadrantPage = () => {
-  const [quadrant1Content, setQuadrant1Content] = useState('');
-  const quadrant2Content = 'This is patient data!';
-  const quadrant3Content = `Triage Level: 0`;
-  const [quadrant4Content, setQuadrant4Content] = useState('');
+  useEffect(() => {
+    // Retrieve the data from local storage
+    const patientDataJSON = localStorage.getItem('patientData');
+
+    if (patientDataJSON) {
+      // Parse the JSON string to get the patientData object
+      const patientData = JSON.parse(patientDataJSON);
+
+      // Access formData and response from patientData
+      const { formData, response } = patientData;
+
+      // Set the state variables
+      setFormData(formData);
+      setResponse(response);
+
+      // Construct the message to send to the API
+      const message = `Do not give a disclaimer about being an ai and not being able to give medical advice. The text you generate will be read by a doctor, I need you to be a co-pilot for a doctor. What would you diagnose the following patient and recommend as treatment plans. Dont forget citations. 40 words max: ${JSON.stringify(formData)}`;
+
+      // Use the constructed message in the API request
+      const requestOptions = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }), // Send the message as the API request body
+      };
+
+      // Make the API request to /api/chat
+      fetch('/api/chat', requestOptions)
+        .then((response) => response.json())
+        .then((data) => {
+          // Update the chatResponse state with the API response
+          setChatResponse(data.text);
+          console.log(data)
+          setChatCitationResponse(data.citations);
+        })
+        .catch((error) => {
+          console.error('Error with chat API:', error);
+          setChatResponse('Error processing chat request');
+        });
+    } else {
+      // Handle the case where patientData is not available
+      console.error('Patient Data not found.');
+    }
+  }, []); // Empty dependency array to ensure this effect runs only once
+
+  const toggleFormVisibility = () => {
+    setIsFormVisible(!isFormVisible);
+  };
+
+  const renderFormDataTable = () => {
+    if (!formData) return null;
+
+    return (
+      <div className='fullChart'>
+
+        <h3 onClick={toggleFormVisibility} style={{ cursor: 'pointer' }}>
+          Full Patient Chart:
+          {isFormVisible ? <span> &#9660;</span> : <span> &#9654;</span>}
+        </h3>
+        {isFormVisible && (
+          <table>
+            <tbody>
+              {Object.entries(formData).map(([key, value]) => (
+                <tr key={key}>
+                  <td>{key}</td>
+                  <td>{value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    );
+  };
+
+  const chat = () => {
+    if (!formData) return null;
+
+    return (
+      <div className='chat'>
+        <h3>Diagnosis and Treatment Plan Recommendation</h3>
+        {/* Display chatResponse here */}
+        <p>{chatResponse}</p>
+      </div>
+    );
+  };
+
+  const renderPapers = () => {
+    if (!formData) return null;
+  
+    return (
+      <div className='fullChart'>
+        <h3> Relevant Research Paper </h3>
+        <p>{chatCitationResponse}</p>
+      </div>
+    );
+  };
+  
+
+  const renderClassificationInfo = () => {
+    if (!response || !response.classifications || response.classifications.length === 0) {
+      return null;
+    }
+
+    const classification = response.classifications[0]; // Assuming there is only one classification
+
+    return (
+      <div className='rec'>
+        <h3><strong>Patient:</strong> {formData.firstName} {formData.lastName}</h3>
+        <table>
+          <tbody>
+            <tr>
+              <td>Triage Level:</td>
+              <td>{classification.prediction}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    );
+  };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', height: '100vh' }}>
-      <Quadrant title="Co:med Doctor View">
-      </Quadrant>
-      <Quadrant title="Patient Data">
-        <div>{quadrant2Content}</div>
-      </Quadrant>
-    <Quadrant title="Recommended Triage Level">
-        <div>{quadrant3Content}</div>
-    </Quadrant>
-    <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr' }}>
-        <Quadrant title="Co:med Response">
-            {/* Add content or components for the additional row here */}
-        </Quadrant>
-        <Quadrant title="Ask Co.med">
-        <textarea
-          value={quadrant4Content}
-          onChange={(e) => setQuadrant4Content(e.target.value)}
-        />
-        </Quadrant>
-    </div>
-  </div>
-  );
-};
+    <div className='containerDoctor'>
+      <Head>
+        <title>Doctor View</title>
+      </Head>
+      {renderClassificationInfo()}
 
-export default QuadrantPage;
+      {chat()}
+      {renderPapers()}
+
+      {renderFormDataTable()}
+      <br></br>
+      <br></br>
+    </div>
+  );
+}

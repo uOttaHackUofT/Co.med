@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Head from 'next/head';
 import { TextField, Button, Checkbox, FormControlLabel, Grid } from '@mui/material';
 import './styles.css'; // Import your CSS file
 import example_data from './data/trainedData.json'
@@ -62,10 +63,18 @@ const Patient = () => {
       });
 
       if (response.ok) {
-        const responseBody = await response.json(); 
+        const responseBody = await response.json();
         // Handle a successful response here
         console.log('Form data submitted successfully');
         console.log('Response Body:', responseBody);
+
+        const patientData = {
+          formData: formData,
+          response: responseBody,
+        };
+
+        // Save the patientData object to local storage
+        localStorage.setItem('patientData', JSON.stringify(patientData));
       } else {
         // Handle errors here
         console.error('Error submitting form data');
@@ -78,6 +87,10 @@ const Patient = () => {
 
   return (
     <div className="container">
+      <Head>
+        <title>Patient View</title>
+      </Head>
+
       <form onSubmit={handleSubmit}>
         <Grid container spacing={2}>
           <h1>Patient Information</h1>
@@ -113,8 +126,10 @@ const Patient = () => {
               variant="outlined"
               fullWidth
               type="date"
-
               required
+              InputLabelProps={{
+                shrink: true,
+              }}
             />
           </Grid>
           <Grid item xs={12}>
