@@ -1,0 +1,29 @@
+/* styles.css */
+.container {
+    width: 60%;
+    /* Adjust the width as needed */
+    margin: 0 auto;
+    /* Center horizontally */
+    padding: 20px;
+    margin-top:100px;
+    margin-bottom:100px;
+    /* Optional: Add padding for spacing */
+}
+
+/* Style for headings */
+h2 {
+    margin-bottom: 20px;
+    /* Optional: Add margin below headings */
+}
+
+/* Style for the "Declaration of Consent" label */
+.label-consent {
+    margin-top: 10px;
+    /* Optional: Add margin above the label */
+}
+
+/* Style for the "Submit" button */
+button[type="submit"] {
+    margin-top: 20px;
+    /* Optional: Add margin above the button */
+}

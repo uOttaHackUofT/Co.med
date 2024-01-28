@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { TextField, Button, Checkbox, FormControlLabel, Grid } from '@mui/material';
+import './styles.css'; // Import your CSS file
+import example_data from './data/trainedData.json'
 
-const patient = () => {
+const Patient = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -17,6 +19,7 @@ const patient = () => {
     recentInjuries: '',
     recentIllnesses: '',
     substanceUseHistory: '',
+    symptoms: '',
     consent: false,
   });
 
@@ -28,18 +31,58 @@ const patient = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form data submitted:', formData);
-    // You can send the form data to your backend or perform other actions here.
+
+    // Generate formDataString based on form data fields
+    const formDataString =
+      `DOB: ${formData.dateOfBirth}\n` +
+      `Gender: ${formData.gender}\n` +
+      `Medical History: ${formData.medicalHistory}\n` +
+      `Recent Injuries: ${formData.recentInjuries}\n` +
+      `Recent Illnesses: ${formData.recentIllnesses}\n` +
+      `Symptoms ${formData.symptoms}\n` +
+      `Substance Use History: ${formData.substanceUseHistory}\n`;
+
+    // Create an object with the formatted data
+    const formattedData = {
+      "examples": example_data,
+      "inputs": [
+        formDataString,
+      ],
+    };
+
+    try {
+      const response = await fetch('/api/classify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formattedData),
+      });
+
+      if (response.ok) {
+        const responseBody = await response.json(); 
+        // Handle a successful response here
+        console.log('Form data submitted successfully');
+        console.log('Response Body:', responseBody);
+      } else {
+        // Handle errors here
+        console.error('Error submitting form data');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
 
+
   return (
-    <div>
-      <h2>Patient Information</h2>
+    <div className="container">
       <form onSubmit={handleSubmit}>
         <Grid container spacing={2}>
-          <Grid item xs={6}>
+          <h1>Patient Information</h1>
+
+          <Grid item xs={12}>
             <TextField
               label="First Name"
               name="firstName"
@@ -50,7 +93,7 @@ const patient = () => {
               required
             />
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={12}>
             <TextField
               label="Last Name"
               name="lastName"
@@ -70,6 +113,7 @@ const patient = () => {
               variant="outlined"
               fullWidth
               type="date"
+
               required
             />
           </Grid>
@@ -92,7 +136,6 @@ const patient = () => {
               onChange={handleChange}
               variant="outlined"
               fullWidth
-              required
             />
           </Grid>
           <Grid item xs={6}>
@@ -103,7 +146,6 @@ const patient = () => {
               onChange={handleChange}
               variant="outlined"
               fullWidth
-              required
             />
           </Grid>
           <Grid item xs={6}>
@@ -114,7 +156,6 @@ const patient = () => {
               onChange={handleChange}
               variant="outlined"
               fullWidth
-              required
             />
           </Grid>
           <Grid item xs={12}>
@@ -125,7 +166,6 @@ const patient = () => {
               onChange={handleChange}
               variant="outlined"
               fullWidth
-              required
               type="email"
             />
           </Grid>
@@ -201,6 +241,18 @@ const patient = () => {
             />
           </Grid>
 
+          <h1>Symptoms</h1>
+          <Grid item xs={12}>
+            <TextField
+              label="Symptoms"
+              name="symptoms"
+              value={formData.symptoms}
+              onChange={handleChange}
+              variant="outlined"
+              fullWidth
+            />
+          </Grid>
+
           <h1>Declaration of Consent</h1>
           <Grid item xs={12}>
             <FormControlLabel
@@ -227,4 +279,4 @@ const patient = () => {
   );
 };
 
-export default patient;
+export default Patient;
